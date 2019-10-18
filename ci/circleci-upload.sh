@@ -64,18 +64,26 @@ if [ -n "$TAG" ]; then
     VERSION="$TAG"
     REPO="$REPO_RELEASE"
 fi
-
-cloudsmith push raw \
-    --republish \
-    --no-wait-for-sync \
-    --version $VERSION \
+CS_STD_OPTS="--republish --no-wait-for-sync --version $VERSION"
+cloudsmith push raw $CS_STD_OPTS \
     --name squiddio-${PKG_TARGET}-${PKG_TARGET_VERSION}-tarball \
     --summary "Squiddio installation tarball for automatic installations." \
     $REPO $tarball
-cloudsmith push raw \
-    --republish \
-    --no-wait-for-sync \
-    --version $VERSION \
+cloudsmith push raw $CS_STD_OPTS \
     --name squiddio-${PKG_TARGET}-${PKG_TARGET_VERSION}-metadata \
     --summary "Squiddio installation metadata for automatic installations." \
     $REPO $xml
+
+if [ "${PKG_TARGET}" = "ubuntu" ]; then
+    package=$(ls $HOME/project/build/*.deb)
+    cloudsmith push deb $CS_STD_OPTS \
+        --name squiddio-debian-package \
+        --summary "Squiddio .deb package for manual installations." \
+    $REPO/${PKG_TARGET}/${PKG_TARGET_VERSION} $package
+elif [ "${PKG_TARGET}" = "mingw" ]; then
+    package=$(ls $HOME/project/build/*.exe)
+    cloudsmith push raw  $CS_STD_OPTS \
+        --name squiddio-windows-mingw-installer \
+        --summary "Squiddio windows mingw installer for manual installations" \
+    $REPO $package
+fi
