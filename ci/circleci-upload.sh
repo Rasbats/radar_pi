@@ -12,11 +12,11 @@ if [ -z "$CIRCLECI" ]; then
     exit 0;
 fi
 
-branch=$(git symbolic-ref --short HEAD)
-if [ "$branch" != 'master' ]; then
-    echo "Not on master branch, skipping deployment."
-    exit 0
-fi
+#branch=$(git symbolic-ref --short HEAD)
+#if [ "$branch" != 'master' ]; then
+#    echo "Not on master branch, skipping deployment."
+#    exit 0
+#fi
 
 if [ -z "$CLOUDSMITH_API_KEY" ]; then
     echo 'Cannot deploy to cloudsmith, missing $CLOUDSMITH_API_KEY'
@@ -43,6 +43,7 @@ else
     sudo -H python3 -m pip install -q cloudsmith-cli
 fi
 
+
 BUILD_ID=${CIRCLE_BUILD_NUM:-1}
 commit=$(git rev-parse --short=7 HEAD) || commit="unknown"
 now=$(date --rfc-3339=seconds) || now=$(date)
@@ -52,5 +53,26 @@ xml=$(ls $HOME/project/build/*.xml)
 sudo chmod 666 $xml
 echo '<!--'" Date: $now Commit: $commit Build nr: $BUILD_ID -->" >> $xml
 
-cloudsmith push raw --republish --no-wait-for-sync $REPO $tarball
-cloudsmith push raw --republish --no-wait-for-sync $REPO $xml
+HERE=$(dirname $(readlink -fn $0))
+source ${HERE}/../build/pkg_version.sh
+VERSION="${VERSION}+${BUILD_ID}.${commit}"
+
+TAG=$(git tag --points-at HEAD)
+if [ -n "$TAG" ]; then
+    VERSION="$TAG"
+fi
+
+cloudsmith push raw \
+    --republish \
+    --no-wait-for-sync \
+    --version $VERSION \
+    --name squiddio-${PKG_TARGET}-${PKG_TARGET_VERRSION}-tarball \
+    --summary "Squiddio installation tarball for automatic installations." \
+    $REPO $tarball
+cloudsmith push raw \
+    --republish \
+    --no-wait-for-sync \
+    --version $VERSION \
+    --name squiddio-${PKG_TARGET}-${PKG_TARGET_VERRSION}-metadata \
+    --summary "Squiddio installation metadata for automatic installations." \
+    $REPO $xml

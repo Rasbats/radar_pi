@@ -222,4 +222,7 @@ configure_file(
   ${CMAKE_SOURCE_DIR}/radar-plugin.xml.in
   ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_NAME}.xml
 )
-
+configure_file(
+  ${CMAKE_SOURCE_DIR}/pkg_version.sh.in
+  ${CMAKE_CURRENT_BINARY_DIR}/pkg_version.sh
+)
